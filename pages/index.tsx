@@ -5,9 +5,11 @@ import Image from 'next/image';
 export default function Home() {
     const [formSubmitted, setFormSubmitted] = useState(false);
     const [buttonStatus, setButtonStatus] = useState(false);
+    const [formSubmittedMessage, setFormSubmittedMessage] = useState('');
 
     const handleSubmit = async (e: any) => {
         e.preventDefault();
+        setFormSubmittedMessage('')
 
         const formData: any = new FormData(e.target);
         const data: any = {};
@@ -15,24 +17,25 @@ export default function Home() {
         for (let [key, value] of formData.entries()) {
             data[key] = value;
         }
-
-        fetch('/api/handleFormSubmit', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data.message);
+        try {
+            const response: Response = await fetch('/api/handleFormSubmit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
             })
-            .catch(error => {
-                console.error(error);
-            });
-        setFormSubmitted(true);
-
-        e.target.reset();
+            if(!response.ok) {
+                setFormSubmittedMessage('Something went wrong - try again later.')
+            } else {
+                setFormSubmittedMessage('Thanks - let\'s see what happends next!')
+                e.target.reset();
+            }
+        } catch {
+            setFormSubmittedMessage('Something went wrong - try again later.')
+        } finally {
+            setFormSubmitted(true);
+        }
     };
 
     return (
@@ -57,7 +60,7 @@ export default function Home() {
                             : 'pointer-events-none absolute opacity-0'
                     }`}
                 >
-                    <p>Thanks - let's see what happens!</p>
+                    <p>{formSubmittedMessage}</p>
                 </div>
             </div>
             <div className="flex justify-center">
@@ -101,7 +104,7 @@ export default function Home() {
                         formSubmitted ? 'translate-x-0' : 'translate-x-80'
                     }`}
                 >
-                    <p>Thanks - let's see what happens!</p>
+                    <p>{formSubmittedMessage}</p>
                 </div>
             </div>
 

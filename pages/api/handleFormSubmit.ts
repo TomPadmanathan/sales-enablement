@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import nodemailer from 'nodemailer';
+import SMTPTransport from 'nodemailer/lib/smtp-transport';
 
-const transporter = nodemailer.createTransport({
+const transporter: nodemailer.Transporter<SMTPTransport.SentMessageInfo> = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.SENDER_EMAIL,
@@ -9,7 +10,12 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-const sendEmail = (req: any) => {
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+
+    if(req.method != 'POST') {
+        res.status(405).send()
+        return
+    }
     transporter.sendMail(
         {
             from: process.env.SENDER_EMAIL,
@@ -38,18 +44,10 @@ const sendEmail = (req: any) => {
             }</td>
         </tr>
     </table>`,
-        },
-        (error: any, info: any) => {
-            if (error) {
-                console.log(error);
-            } else {
-                console.log('Email sent: ' + info.response);
-            }
-        }
-    );
-};
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
-    sendEmail(req);
-
-    res.status(200).json({ message: 'Form submitted successfully' });
+        }).then(() => {
+            res.status(200).send()
+        }).catch(() => {
+            res.status(500).send()
+            return
+        });
 }
